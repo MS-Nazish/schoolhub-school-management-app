@@ -1,0 +1,113 @@
+rules_version = '2';
+
+// SchoolHub security rules.
+// Admin: everything. Teacher: own classes' students, attendance and results; own salary.
+// Parent: own children's records and fees. Everyone signed in: names, classes, timetable,
+// notices and homework. Messages and notifications: only the people they belong to.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null && request.auth.token.email != null; }
+    function email() { return request.auth.token.email.lower(); }
+    // Must match ADMIN_EMAILS in src/data/cloud.ts
+    function isAdmin() { return signedIn() && email() in ['admin@school.com']; }
+
+    function profilePath() { return /databases/$(database)/documents/profiles/$(email()); }
+    function hasProfile() { return signedIn() && exists(profilePath()); }
+    function profile() { return get(profilePath()).data; }
+    function myId() { return profile().userId; }
+    function isTeacher() { return hasProfile() && profile().role == 'teacher'; }
+    function isParent() { return hasProfile() && profile().role == 'parent'; }
+    // Teacher: classes they teach. Parent: classes their children are in.
+    function inMyClasses(classId) { return hasProfile() && classId in profile().classIds; }
+    function onlyChanges(fields) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields); }
+
+    // Login → role lookup used by these rules
+    match /profiles/{profileEmail} {
+      allow read: if isAdmin() || (signedIn() && profileEmail == email());
+      allow write: if isAdmin();
+    }
+
+    // School-wide information
+    match /users/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /classes/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /timetable/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /notices/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /homework/{id} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin()
+        || (isTeacher() && inMyClasses(request.resource.data.classId) && request.resource.data.teacherId == myId());
+      allow delete: if isAdmin() || (isTeacher() && resource.data.teacherId == myId());
+    }
+
+    // Students: parents may only change their own child's photo
+    match /students/{id} {
+      allow read: if isAdmin()
+        || (isTeacher() && inMyClasses(resource.data.classId))
+        || (isParent() && resource.data.parentId == myId());
+      allow update: if isAdmin()
+        || (isParent() && resource.data.parentId == myId() && onlyChanges(['photo']));
+      allow create, delete: if isAdmin();
+    }
+
+    match /attendance/{id} {
+      allow read: if isAdmin() || inMyClasses(resource.data.classId);
+      allow create, update: if isAdmin() || (isTeacher() && inMyClasses(request.resource.data.classId));
+      allow delete: if isAdmin();
+    }
+
+    match /results/{id} {
+      allow read: if isAdmin()
+        || (isTeacher() && inMyClasses(resource.data.classId))
+        || (isParent() && resource.data.parentId == myId());
+      allow create, update: if isAdmin() || (isTeacher() && inMyClasses(request.resource.data.classId));
+      allow delete: if isAdmin();
+    }
+
+    // Fees: parents may only mark their own child's voucher as paid
+    match /fees/{id} {
+      allow read: if isAdmin() || (isParent() && resource.data.parentId == myId());
+      allow update: if isAdmin()
+        || (isParent() && resource.data.parentId == myId() && onlyChanges(['status', 'paidOn'])
+            && request.resource.data.status == 'paid');
+      allow create, delete: if isAdmin();
+    }
+
+    // Salaries: admin, and each teacher their own
+    match /salaries/{id} {
+      allow read: if isAdmin() || (isTeacher() && resource.data.teacherId == myId());
+      allow write: if isAdmin();
+    }
+    match /payroll/{id} {
+      allow read: if isAdmin() || (isTeacher() && resource.data.teacherId == myId());
+      allow write: if isAdmin();
+    }
+
+    match /messages/{id} {
+      allow read: if isAdmin() || (hasProfile() && (resource.data.from == myId() || resource.data.to == myId()));
+      allow create: if hasProfile() && request.resource.data.from == myId();
+      allow update: if hasProfile() && resource.data.to == myId() && onlyChanges(['read']);
+      allow delete: if isAdmin();
+    }
+
+    // Anyone signed in can notify someone (e.g. teacher → parent); only the owner reads them
+    match /notifications/{id} {
+      allow read: if isAdmin() || (hasProfile() && resource.data.userId == myId());
+      allow create: if signedIn();
+      allow update: if isAdmin() || (hasProfile() && resource.data.userId == myId() && onlyChanges(['read', 'pushed']));
+      allow delete: if isAdmin();
+    }
+  }
+}
