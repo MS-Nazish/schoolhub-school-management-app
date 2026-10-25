@@ -69,6 +69,11 @@ interface StoreValue {
 
   generateFees: (month: string) => number;
   markFeePaid: (id: string) => void;
+  /** Admin correction: marks a paid fee as unpaid again */
+  markFeeUnpaid: (id: string) => void;
+  /** Notifies parents with unpaid fees for a month (one class, or all); returns how many were reminded */
+  sendFeeReminders: (month: string, classId?: string) => number;
+  setClassFee: (classId: string, amount: number) => void;
   generateSalaries: (month: string) => number;
   markSalaryPaid: (id: string) => void;
 
@@ -374,20 +379,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       generateFees: (month) => {
         const missing = data.students.filter((s) => !data.fees.some((f) => f.id === `${s.id}_${month}`));
-        update((d) => ({
-          ...d,
-          fees: [
-            ...d.fees,
-            ...missing.map((s) => ({
-              id: `${s.id}_${month}`, studentId: s.id, month, amount: MONTHLY_FEE, status: 'unpaid' as const,
-            })),
-          ],
-          notifications: [
-            ...makeNotes(missing.map((s) => s.parentId), 'fee', `Fee voucher: ${formatMonth(month)}`,
-              `Tuition fee of ${money(MONTHLY_FEE)} is due.`),
-            ...d.notifications,
-          ],
-        }));
+        update((d) => {
+          // Each class can have its own monthly fee
+          const feeFor = (classId: string) => d.classes.find((c) => c.id === classId)?.monthlyFee ?? MONTHLY_FEE;
+          return {
+            ...d,
+            fees: [
+              ...d.fees,
+              ...missing.map((s) => ({
+                id: `${s.id}_${month}`, studentId: s.id, month, amount: feeFor(s.classId), status: 'unpaid' as const,
+              })),
+            ],
+            notifications: [
+              ...missing.flatMap((s) => makeNotes([s.parentId], 'fee', `Fee voucher: ${formatMonth(month)}`,
+                `${s.name}: tuition fee of ${money(feeFor(s.classId))} is due.`)),
+              ...d.notifications,
+            ],
+          };
+        });
         return missing.length;
       },
       markFeePaid: (id) =>
@@ -395,6 +404,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ...d,
           fees: d.fees.map((f) => (f.id === id ? { ...f, status: 'paid', paidOn: today() } : f)),
         })),
+      markFeeUnpaid: (id) =>
+        update((d) => ({
+          ...d,
+          fees: d.fees.map((f) => (f.id === id ? { ...f, status: 'unpaid', paidOn: undefined } : f)),
+        })),
+      sendFeeReminders: (month, classId) => {
+        const due = data.fees
+          .filter((f) => f.month === month && f.status === 'unpaid')
+          .map((f) => ({ fee: f, student: data.students.find((s) => s.id === f.studentId) }))
+          .filter((r) => r.student && (!classId || r.student.classId === classId));
+        if (due.length) {
+          update((d) => ({
+            ...d,
+            notifications: [
+              ...due.flatMap(({ fee, student }) => makeNotes([student!.parentId], 'fee', `Fee reminder: ${formatMonth(month)}`,
+                `${student!.name}'s tuition fee of ${money(fee.amount)} is still unpaid. Please pay before the 10th.`)),
+              ...d.notifications,
+            ],
+          }));
+        }
+        return due.length;
+      },
+      setClassFee: (classId, amount) =>
+        update((d) => ({ ...d, classes: d.classes.map((c) => (c.id === classId ? { ...c, monthlyFee: amount } : c)) })),
 
       generateSalaries: (month) => {
         const teachers = data.users.filter((u) => u.role === 'teacher');

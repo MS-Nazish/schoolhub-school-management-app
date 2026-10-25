@@ -20,7 +20,7 @@ export function HomeworkCard({ hw, showClass, onDelete }: { hw: Homework; showCl
         <Badge text={t(hw.subject)} />
         <View style={[styles.row, { gap: 8 }]}>
           {showClass && <Text style={styles.muted}>{className(data, hw.classId)}</Text>}
-          {onDelete && <IconButton icon="trash-outline" color={colors.danger} onPress={onDelete} />}
+          {onDelete && <IconButton icon="trash-outline" color={colors.danger} label={t('Delete homework')} onPress={onDelete} />}
         </View>
       </View>
       <Text style={[styles.listTitle, { fontSize: 16 }]}>{hw.title}</Text>

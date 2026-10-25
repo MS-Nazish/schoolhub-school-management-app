@@ -2,9 +2,10 @@ import { Text, View } from 'react-native';
 
 import { ChildSwitcher, useChild } from '@/components/ChildContext';
 import { colors } from '@/components/theme';
-import { Badge, Button, Card, EmptyState, Screen, SectionTitle, styles } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, IconButton, Screen, SectionTitle, styles } from '@/components/ui';
 import { useStore } from '@/data/store';
 import { t } from '@/lib/i18n';
+import { shareFeeReceipt } from '@/lib/receipt';
 import { confirmAction, formatMonth, money, notify } from '@/lib/utils';
 
 export default function ParentFees() {
@@ -34,7 +35,11 @@ export default function ParentFees() {
               <Text style={styles.muted}>{money(f.amount)}{f.paidOn ? ` · ${t('Paid on')} ${f.paidOn}` : ''}</Text>
             </View>
             {f.status === 'paid' ? (
-              <Badge text={t('Paid')} color={colors.success} soft={colors.successSoft} />
+              <View style={[styles.row, { gap: 4 }]}>
+                <Badge text={t('Paid')} color={colors.success} soft={colors.successSoft} />
+                <IconButton icon="receipt-outline" color={colors.primary} label={t('Fee receipt')} onPress={() =>
+                  shareFeeReceipt(data, f).catch((e: Error) => notify(t('Could not create PDF'), e.message))} />
+              </View>
             ) : (
               <Button small title={t('Pay now')} icon="card-outline" onPress={() =>
                 confirmAction(t('Demo payment'), `${money(f.amount)} · ${formatMonth(f.month)}\n${t('No real money is charged.')}`, () => {

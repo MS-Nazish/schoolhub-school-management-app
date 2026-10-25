@@ -76,7 +76,7 @@ export default function Students() {
                     color={att.pct >= 85 ? colors.success : colors.warning}
                     soft={att.pct >= 85 ? colors.successSoft : colors.warningSoft}
                   />
-                  <IconButton icon="trash-outline" color={colors.danger}
+                  <IconButton icon="trash-outline" color={colors.danger} label={`${t('Delete student')}: ${s.name}`}
                     onPress={() => confirmAction(t('Delete student'), `${t('Remove')} ${s.name}?`, () => deleteStudent(s.id))} />
                 </View>
               }

@@ -88,9 +88,9 @@ export default function Teachers() {
                 <View style={{ alignItems: 'flex-end', gap: 6 }}>
                   <Badge text={t(tc.subject ?? '—')} color={colors.info} soft={colors.infoSoft} />
                   <View style={[styles.row, { gap: 4 }]}>
-                    <IconButton icon="cash-outline" color={colors.success}
+                    <IconButton icon="cash-outline" color={colors.success} label={`${t('Monthly salary')}: ${tc.name}`}
                       onPress={() => { setEditingSalary(editingSalary === tc.id ? null : tc.id); setSalaryInput(String(tc.salary ?? '')); }} />
-                    <IconButton icon="trash-outline" color={colors.danger}
+                    <IconButton icon="trash-outline" color={colors.danger} label={`${t('Delete teacher')}: ${tc.name}`}
                       onPress={() => confirmAction(t('Delete teacher'), `${t('Remove')} ${tc.name}?`, () => deleteTeacher(tc.id))} />
                   </View>
                 </View>

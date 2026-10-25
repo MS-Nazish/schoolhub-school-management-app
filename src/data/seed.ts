@@ -39,9 +39,9 @@ export function createSeedData(): SchoolData {
   const iso = (minsAgo: number) => new Date(now - minsAgo * 60000).toISOString();
 
   const classes = [
-    { id: 'c6', name: 'Class 6-A' },
-    { id: 'c7', name: 'Class 7-A' },
-    { id: 'c8', name: 'Class 8-A' },
+    { id: 'c6', name: 'Class 6-A', monthlyFee: 5000 },
+    { id: 'c7', name: 'Class 7-A', monthlyFee: 5500 },
+    { id: 'c8', name: 'Class 8-A', monthlyFee: 6000 },
   ];
 
   const users: User[] = [
@@ -138,14 +138,15 @@ export function createSeedData(): SchoolData {
   const prev = monthStr(d);
   const fees: FeeRecord[] = [];
   for (const s of students) {
+    const fee = classes.find((c) => c.id === s.classId)?.monthlyFee ?? MONTHLY_FEE;
     const prevPaid = rand() > 0.15;
     fees.push({
-      id: `${s.id}_${prev}`, studentId: s.id, month: prev, amount: MONTHLY_FEE,
+      id: `${s.id}_${prev}`, studentId: s.id, month: prev, amount: fee,
       status: prevPaid ? 'paid' : 'unpaid', paidOn: prevPaid ? `${prev}-05` : undefined,
     });
     const curPaid = rand() > 0.6;
     fees.push({
-      id: `${s.id}_${cur}`, studentId: s.id, month: cur, amount: MONTHLY_FEE,
+      id: `${s.id}_${cur}`, studentId: s.id, month: cur, amount: fee,
       status: curPaid ? 'paid' : 'unpaid', paidOn: curPaid ? `${cur}-03` : undefined,
     });
   }

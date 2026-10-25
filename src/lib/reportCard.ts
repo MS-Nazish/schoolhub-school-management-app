@@ -1,13 +1,8 @@
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import { Platform } from 'react-native';
-
 import { EXAMS, SCHOOL_NAME } from '@/data/seed';
 import { attendanceStats, className, userName } from '@/data/store';
 import type { SchoolData, Student } from '@/data/types';
+import { escapeHtml as esc, sharePdf } from './print';
 import { formatDate, grade, today } from './utils';
-
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
 const remark = (pct: number) =>
   pct >= 90 ? 'Outstanding performance. Keep it up!'
@@ -103,28 +98,6 @@ export function reportCardHtml(data: SchoolData, student: Student) {
 }
 
 /** Create the PDF and open the share sheet (phone) or print dialog (web) */
-export async function shareReportCard(data: SchoolData, student: Student) {
-  const html = reportCardHtml(data, student);
-  if (Platform.OS === 'web') {
-    // Print from a hidden frame (no pop-up needed); the browser's print dialog offers "Save as PDF"
-    document.getElementById('report-card-frame')?.remove();
-    const frame = document.createElement('iframe');
-    frame.id = 'report-card-frame';
-    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
-    document.body.appendChild(frame);
-    const doc = frame.contentWindow!.document;
-    doc.open();
-    doc.write(html);
-    doc.close();
-    await new Promise((r) => setTimeout(r, 300));
-    frame.contentWindow!.focus();
-    frame.contentWindow!.print();
-    return;
-  }
-  const { uri } = await Print.printToFileAsync({ html });
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf', dialogTitle: `${student.name} - Report Card` });
-  } else {
-    await Print.printAsync({ uri });
-  }
+export function shareReportCard(data: SchoolData, student: Student) {
+  return sharePdf(reportCardHtml(data, student), `${student.name} - Report Card`);
 }

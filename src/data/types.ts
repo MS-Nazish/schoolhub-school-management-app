@@ -19,6 +19,8 @@ export interface User {
 export interface ClassRoom {
   id: string;
   name: string;
+  /** Monthly tuition fee for new vouchers (defaults to MONTHLY_FEE) */
+  monthlyFee?: number;
 }
 
 export interface Student {

@@ -201,9 +201,12 @@ export function EmptyState({ icon = 'file-tray-outline', text }: { icon?: IconNa
   );
 }
 
-export function IconButton({ icon, onPress, color = colors.muted, size = 20 }: { icon: IconName; onPress: () => void; color?: string; size?: number }) {
+export function IconButton({ icon, onPress, color = colors.muted, size = 20, label }: {
+  icon: IconName; onPress: () => void; color?: string; size?: number; label?: string;
+}) {
   return (
-    <Pressable onPress={onPress} hitSlop={10} style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}>
+    <Pressable onPress={onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={label}
+      style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}>
       <Ionicons name={icon} size={size} color={color} />
     </Pressable>
   );

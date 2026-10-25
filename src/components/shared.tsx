@@ -123,7 +123,7 @@ export function NoticeCard({ notice, onDelete }: { notice: Notice; onDelete?: ()
           <Ionicons name="megaphone" size={18} color={colors.warning} />
           <Text style={[styles.listTitle, { flex: 1 }]}>{notice.title}</Text>
         </View>
-        {onDelete && <IconButton icon="trash-outline" color={colors.danger} onPress={onDelete} />}
+        {onDelete && <IconButton icon="trash-outline" color={colors.danger} label={t('Delete notice')} onPress={onDelete} />}
       </View>
       <Text style={styles.body}>{notice.body}</Text>
       <View style={[styles.row, { justifyContent: 'space-between', marginTop: 10 }]}>
