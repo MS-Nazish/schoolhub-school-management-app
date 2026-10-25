@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Switch, Text, View } from 'react-native';
 
 import { TeacherForm, type TeacherFormValues, validateTeacher } from '@/components/TeacherForm';
@@ -11,16 +11,21 @@ import { confirmAction, formatMonth, money, notify, thisMonth } from '@/lib/util
 
 export default function EditTeacher() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, updateTeacher, updateSalary, deleteTeacher } = useStore();
+  const { data, loaded, updateTeacher, updateSalary, deleteTeacher } = useStore();
   const teacher = data.users.find((u) => u.id === id && u.role === 'teacher');
-
-  const [form, setForm] = useState<TeacherFormValues | null>(() => teacher ? {
-    name: teacher.name, email: teacher.email, phone: teacher.phone ?? '', salary: String(teacher.salary ?? ''),
-    subject: teacher.subject ?? '', classIds: teacher.classIds ?? [],
-  } : null);
+  const [form, setForm] = useState<TeacherFormValues | null>(null);
   const [applyToMonth, setApplyToMonth] = useState(true);
 
-  if (!teacher || !form) return <Screen><EmptyState text={t('Teacher not found')} /></Screen>;
+  // Fill the form once the teacher is available (the page can open before the data has loaded)
+  useEffect(() => {
+    if (form || !teacher) return;
+    setForm({
+      name: teacher.name, email: teacher.email, phone: teacher.phone ?? '', salary: String(teacher.salary ?? ''),
+      subject: teacher.subject ?? '', classIds: teacher.classIds ?? [],
+    });
+  }, [form, teacher]);
+
+  if (!teacher || !form) return <Screen>{loaded && !teacher ? <EmptyState text={t('Teacher not found')} /> : null}</Screen>;
 
   const records = data.salaries.filter((s) => s.teacherId === teacher.id).sort((a, b) => b.month.localeCompare(a.month));
   const current = records.find((r) => r.month === thisMonth());

@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { dmyToIso, isoToDmy } from '@/components/DateInput';
@@ -12,17 +12,22 @@ import { confirmAction, notify } from '@/lib/utils';
 
 export default function EditStudent() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, updateStudent, updateUser, deleteStudent } = useStore();
+  const { data, loaded, updateStudent, updateUser, deleteStudent } = useStore();
   const student = data.students.find((s) => s.id === id);
   const parent = data.users.find((u) => u.id === student?.parentId);
+  const [form, setForm] = useState<StudentFormValues | null>(null);
 
-  const [form, setForm] = useState<StudentFormValues | null>(() => student ? {
-    name: student.name, classId: student.classId, rollNo: String(student.rollNo), gender: student.gender ?? '',
-    dob: isoToDmy(student.dob), admissionDate: isoToDmy(student.admissionDate), address: student.address ?? '',
-    parentName: parent?.name ?? '', parentEmail: parent?.email ?? '', parentPhone: parent?.phone ?? '',
-  } : null);
+  // Fill the form once the student is available (the page can open before the data has loaded)
+  useEffect(() => {
+    if (form || !student) return;
+    setForm({
+      name: student.name, classId: student.classId, rollNo: String(student.rollNo), gender: student.gender ?? '',
+      dob: isoToDmy(student.dob), admissionDate: isoToDmy(student.admissionDate), address: student.address ?? '',
+      parentName: parent?.name ?? '', parentEmail: parent?.email ?? '', parentPhone: parent?.phone ?? '',
+    });
+  }, [form, student, parent]);
 
-  if (!student || !form) return <Screen><EmptyState text={t('Student not found')} /></Screen>;
+  if (!student || !form) return <Screen>{loaded && !student ? <EmptyState text={t('Student not found')} /> : null}</Screen>;
 
   const siblings = parent ? data.students.filter((s) => s.parentId === parent.id && s.id !== student.id) : [];
 
