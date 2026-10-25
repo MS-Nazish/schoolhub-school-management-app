@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { colors } from '@/components/theme';
-import { Avatar, Badge, Button, Card, EmptyState, InfoRow, ProgressBar, Screen, SectionTitle, StatCard, StatGrid, styles } from '@/components/ui';
+import { Avatar, Badge, Banner, Button, Card, EmptyState, InfoRow, ProgressBar, Screen, SectionTitle, StatCard, StatGrid, styles } from '@/components/ui';
 import { EXAMS } from '@/data/seed';
 import { attendanceStats, className, useStore } from '@/data/store';
 import { t } from '@/lib/i18n';
@@ -79,13 +79,23 @@ export default function StudentProfile() {
         <StatCard icon="ribbon" label={t('Average marks')} value={avg === null ? '—' : `${avg}%`} color={colors.info} soft={colors.infoSoft} />
       </StatGrid>
 
+      {user!.role === 'admin' && (
+        <Button title={t('Edit details')} icon="person-outline" style={{ marginBottom: 10 }}
+          onPress={() => router.push(`/admin/student/${student.id}`)} />
+      )}
       {user!.role !== 'parent' && (
         <Button title={t('Enter / edit marks (marksheet)')} icon="create-outline" variant="outline" style={{ marginBottom: 10 }}
           onPress={() => router.push(`/marksheet/${student.id}?exam=${encodeURIComponent(latestExam ?? EXAMS[1]!)}`)} />
       )}
       <Button title={t('Download report card (PDF)')} icon="document-text-outline" onPress={downloadReport} loading={busy} style={{ marginBottom: 16 }} />
 
-      <SectionTitle title={t('Personal details')} />
+      <SectionTitle title={t('Personal details')} right={user!.role === 'admin'
+        ? <Button small variant="ghost" icon="create-outline" title={t('Edit')} onPress={() => router.push(`/admin/student/${student.id}`)} />
+        : undefined} />
+      {user!.role === 'admin' && (!student.dob || !student.gender || !student.address) && (
+        <Banner icon="information-circle-outline" color={colors.warning} soft={colors.warningSoft}
+          text={t('Some details are missing. Tap "Edit details" to add them.')} onPress={() => router.push(`/admin/student/${student.id}`)} />
+      )}
       <Card style={{ paddingVertical: 6 }}>
         <InfoRow icon="calendar-outline" label={t('Date of birth')} value={student.dob ? formatDate(student.dob) : '—'} />
         <InfoRow icon="male-female-outline" label={t('Gender')} value={student.gender ? t(student.gender) : '—'} />

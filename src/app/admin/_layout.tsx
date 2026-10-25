@@ -8,6 +8,7 @@ export default function AdminLayout() {
         { name: 'timetable', title: 'Timetable' },
         { name: 'notices', title: 'Notices' },
         { name: 'teacher/[id]', title: 'Edit teacher' },
+        { name: 'student/[id]', title: 'Edit student' },
       ]}
     />
   );

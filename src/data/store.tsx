@@ -52,7 +52,12 @@ interface StoreValue {
   setLanguage: (l: Lang) => void;
   setPushEnabled: (on: boolean) => void;
 
-  addStudent: (s: { name: string; classId: string; parentName: string; parentEmail: string }) => void;
+  addStudent: (s: {
+    name: string; classId: string; parentName: string; parentEmail: string; parentPhone?: string;
+    rollNo?: number; gender?: Student['gender']; dob?: string; admissionDate?: string; address?: string;
+  }) => void;
+  /** Change any user's details (e.g. a parent's name or phone) */
+  updateUser: (id: string, patch: Partial<User>) => void;
   updateStudent: (id: string, patch: Partial<Student>) => void;
   deleteStudent: (id: string) => void;
   addTeacher: (t: { name: string; email: string; subject: string; classIds: string[]; phone?: string; salary: number }) => void;
@@ -312,20 +317,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       setPushEnabled: (pushEnabled) => setSettings((s) => ({ ...s, pushEnabled })),
 
-      addStudent: ({ name, classId, parentName, parentEmail }) => {
+      addStudent: ({ name, classId, parentName, parentEmail, parentPhone, rollNo, ...details }) => {
         addLogin(parentEmail, 'parent123');
         update((d) => {
           let parent = d.users.find((u) => u.role === 'parent' && u.email.toLowerCase() === parentEmail.toLowerCase());
           const users = [...d.users];
           if (!parent) {
-            parent = { id: uid(), name: parentName, email: parentEmail, password: 'parent123', role: 'parent' };
+            parent = { id: uid(), name: parentName, email: parentEmail, password: 'parent123', role: 'parent', phone: parentPhone || undefined };
             users.push(parent);
           }
-          const rollNo = Math.max(0, ...d.students.filter((s) => s.classId === classId).map((s) => s.rollNo)) + 1;
-          const student: Student = { id: uid(), name, classId, parentId: parent.id, rollNo, admissionDate: today() };
+          const nextRoll = Math.max(0, ...d.students.filter((s) => s.classId === classId).map((s) => s.rollNo)) + 1;
+          const student: Student = {
+            id: uid(), name, classId, parentId: parent.id, rollNo: rollNo || nextRoll,
+            gender: details.gender, dob: details.dob, address: details.address, admissionDate: details.admissionDate || today(),
+          };
           return { ...d, users, students: [...d.students, student] };
         });
       },
+      updateUser: (id, patch) =>
+        update((d) => ({ ...d, users: d.users.map((u) => (u.id === id ? { ...u, ...patch } : u)) })),
       updateStudent: (id, patch) =>
         update((d) => ({ ...d, students: d.students.map((s) => (s.id === id ? { ...s, ...patch } : s)) })),
       deleteStudent: (id) =>

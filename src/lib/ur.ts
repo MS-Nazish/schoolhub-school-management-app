@@ -197,6 +197,28 @@ export const ur: Record<string, string> = {
   'Tap a box on the right and type the marks, then press "Save & publish results".': 'دائیں جانب خانے پر ٹیپ کر کے نمبر لکھیں، پھر "نتائج محفوظ اور شائع کریں" دبائیں۔',
   'Marks': 'نمبر',
 
+  // Student details
+  'Student': 'طالب علم',
+  'Roll number': 'رول نمبر',
+  'Leave empty for next number': 'اگلے نمبر کے لیے خالی چھوڑیں',
+  'House, street, city': 'مکان، گلی، شہر',
+  'Parent phone': 'والدین کا فون',
+  'Please enter the student name.': 'براہ کرم طالب علم کا نام درج کریں۔',
+  'Please select a class.': 'براہ کرم کلاس منتخب کریں۔',
+  'Parent name and email are required.': 'والدین کا نام اور ای میل ضروری ہیں۔',
+  'Date of birth is not a valid date (DD-MM-YYYY).': 'تاریخ پیدائش درست نہیں (DD-MM-YYYY)۔',
+  'Admission date is not a valid date (DD-MM-YYYY).': 'داخلے کی تاریخ درست نہیں (DD-MM-YYYY)۔',
+  'Edit student': 'طالب علم میں ترمیم',
+  'Edit details': 'تفصیل میں ترمیم',
+  'Student updated': 'طالب علم اپ ڈیٹ ہو گیا',
+  'Roll number in use': 'رول نمبر پہلے سے موجود ہے',
+  '{name} already has roll #{n} in this class.': 'اس کلاس میں {name} کا رول نمبر پہلے ہی #{n} ہے۔',
+  'Parent details are shared with: {names}': 'والدین کی تفصیل ان کے ساتھ مشترک ہے: {names}',
+  'To change the photo, tap it on the student profile.': 'تصویر بدلنے کے لیے طالب علم کی پروفائل میں اس پر ٹیپ کریں۔',
+  'Some details are missing. Tap "Edit details" to add them.': 'کچھ تفصیلات موجود نہیں۔ شامل کرنے کے لیے "تفصیل میں ترمیم" پر ٹیپ کریں۔',
+  'Tip: use an existing parent email to link brothers and sisters.': 'مشورہ: بہن بھائیوں کو جوڑنے کے لیے موجودہ والدین کی ای میل استعمال کریں۔',
+  'Linked to existing parent {name}.': 'موجودہ والدین {name} سے منسلک کر دیا گیا۔',
+
   // Teacher editing and salaries
   'Edit teacher': 'استاد میں ترمیم',
   'Teacher details': 'استاد کی تفصیل',
