@@ -1,8 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 
 import { colors, radius } from '@/components/theme';
-import { Avatar, Badge, Button, Card, Chips, EmptyState, Screen, styles } from '@/components/ui';
+import { Avatar, Badge, Banner, Button, Card, Chips, EmptyState, Screen, styles } from '@/components/ui';
 import { EXAMS } from '@/data/seed';
 import { useStore } from '@/data/store';
 import { t } from '@/lib/i18n';
@@ -57,6 +58,9 @@ export default function TeacherResults() {
       <Chips options={myClasses.map((c) => ({ label: c.name, value: c.id }))} value={classId} onChange={setClassId} />
       <Chips options={EXAMS.map((e) => ({ label: t(e), value: e }))} value={exam} onChange={setExam} />
 
+      <Banner icon="create-outline" color={colors.info} soft={colors.infoSoft}
+        text={t('Tap a box on the right and type the marks, then press "Save & publish results".')} />
+
       <Card>
         <View style={[styles.row, { justifyContent: 'space-between', marginBottom: 8 }]}>
           <View>
@@ -76,25 +80,26 @@ export default function TeacherResults() {
                 <Text style={styles.listTitle}>{s.name}</Text>
                 <Text style={styles.muted}>{t('Roll')} #{s.rollNo}{has ? ` · ${t('Grade')} ${grade((n / TOTAL) * 100)}` : ''}</Text>
               </View>
-              <TextInput
-                value={marks[s.id] ?? ''}
-                onChangeText={(v) => setMarks({ ...marks, [s.id]: v.replace(/[^0-9]/g, '') })}
-                keyboardType="number-pad"
-                maxLength={3}
-                placeholder="—"
-                placeholderTextColor={colors.muted}
-                accessibilityLabel={`${s.name} ${t('marks')}`}
-                style={{
-                  width: 64, textAlign: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm,
-                  paddingVertical: 8, fontSize: 16, fontWeight: '700', color: colors.text, backgroundColor: colors.input,
-                }}
-              />
+              <View style={[styles.row, { borderWidth: 1.5, borderColor: colors.accent, borderRadius: radius.sm, backgroundColor: colors.input, paddingRight: 6 }]}>
+                <TextInput
+                  value={marks[s.id] ?? ''}
+                  onChangeText={(v) => setMarks({ ...marks, [s.id]: v.replace(/[^0-9]/g, '') })}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                  placeholder={t('Marks')}
+                  placeholderTextColor={colors.muted}
+                  selectTextOnFocus
+                  accessibilityLabel={`${s.name} ${t('marks')}`}
+                  style={{ width: 58, textAlign: 'center', paddingVertical: 8, fontSize: 16, fontWeight: '700', color: colors.text }}
+                />
+                <Ionicons name="pencil" size={14} color={colors.accent} />
+              </View>
             </View>
           );
         })}
       </Card>
 
-      <Button title={t('Save & publish results')} icon="cloud-upload-outline" onPress={save} />
+      <Button title={t('Save & publish results')} icon="cloud-upload-outline" onPress={save} style={{ marginBottom: 8 }} />
     </Screen>
   );
 }

@@ -194,6 +194,8 @@ export const ur: Record<string, string> = {
   'Class avg': 'کلاس اوسط',
   'Out of {n} marks': 'کل {n} نمبر میں سے',
   'Save & publish results': 'نتائج محفوظ اور شائع کریں',
+  'Tap a box on the right and type the marks, then press "Save & publish results".': 'دائیں جانب خانے پر ٹیپ کر کے نمبر لکھیں، پھر "نتائج محفوظ اور شائع کریں" دبائیں۔',
+  'Marks': 'نمبر',
   'Results saved': 'نتائج محفوظ ہو گئے',
   '{n} results published. Parents have been notified.': '{n} نتائج شائع ہو گئے۔ والدین کو اطلاع دے دی گئی ہے۔',
   'Invalid marks': 'غلط نمبر',
