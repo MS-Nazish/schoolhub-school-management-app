@@ -28,6 +28,7 @@ function AppStack() {
         <Stack.Screen name="notifications" options={{ ...header, title: t('Notifications') }} />
         <Stack.Screen name="chat/[id]" options={{ ...header, title: t('Chat') }} />
         <Stack.Screen name="student/[id]" options={{ ...header, title: t('Student Profile') }} />
+        <Stack.Screen name="marksheet/[id]" options={{ ...header, title: t('Marksheet') }} />
       </Stack>
     </ThemeProvider>
   );

@@ -64,6 +64,8 @@ interface StoreValue {
   addHomework: (h: Omit<Homework, 'id' | 'createdAt' | 'teacherId'>) => void;
   deleteHomework: (id: string) => void;
   saveResults: (exam: string, subject: string, total: number, marks: Record<string, number>) => void;
+  /** One student's marks for several subjects of an exam (subjects not in `rows` are left as they are) */
+  saveMarksheet: (studentId: string, exam: string, rows: { subject: string; marks: number; total: number }[]) => void;
 
   generateFees: (month: string) => number;
   markFeePaid: (id: string) => void;
@@ -349,6 +351,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             ...d,
             results: [...d.results.filter((r) => !ids.has(r.id)), ...entries],
             notifications: [...makeNotes(parents, 'result', `${exam} result published`, `${subject} marks are now available.`), ...d.notifications],
+          };
+        }),
+
+      saveMarksheet: (studentId, exam, rows) =>
+        update((d) => {
+          const student = d.students.find((s) => s.id === studentId);
+          const entries: ResultEntry[] = rows.map((r) => ({
+            id: `${studentId}_${exam}_${r.subject}`, studentId, exam, subject: r.subject, marks: r.marks, total: r.total,
+          }));
+          // Upsert only the filled-in subjects (security rules don't let teachers delete results)
+          const ids = new Set(entries.map((e) => e.id));
+          const others = d.results.filter((r) => !ids.has(r.id));
+          return {
+            ...d,
+            results: [...others, ...entries],
+            notifications: student
+              ? [...makeNotes([student.parentId], 'result', `${exam} result published`, `${student.name}'s marksheet is now available.`), ...d.notifications]
+              : d.notifications,
           };
         }),
 

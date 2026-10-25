@@ -79,6 +79,10 @@ export default function StudentProfile() {
         <StatCard icon="ribbon" label={t('Average marks')} value={avg === null ? '—' : `${avg}%`} color={colors.info} soft={colors.infoSoft} />
       </StatGrid>
 
+      {user!.role !== 'parent' && (
+        <Button title={t('Enter / edit marks (marksheet)')} icon="create-outline" variant="outline" style={{ marginBottom: 10 }}
+          onPress={() => router.push(`/marksheet/${student.id}?exam=${encodeURIComponent(latestExam ?? EXAMS[1]!)}`)} />
+      )}
       <Button title={t('Download report card (PDF)')} icon="document-text-outline" onPress={downloadReport} loading={busy} style={{ marginBottom: 16 }} />
 
       <SectionTitle title={t('Personal details')} />
