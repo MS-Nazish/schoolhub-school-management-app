@@ -45,7 +45,9 @@ const pctColor = (pct: number) => (pct >= 80 ? colors.success : pct >= 50 ? colo
 export default function Fees() {
   const { data, generateFees, markFeePaid, markFeeUnpaid, sendFeeReminders, updateFee } = useStore();
   const months = [...new Set(data.fees.map((f) => f.month))].sort().reverse();
-  const [month, setMonth] = useState(months.includes(thisMonth()) ? thisMonth() : months[0] ?? thisMonth());
+  const [pickedMonth, setMonth] = useState('');
+  // Default to this month (or the latest one); the page can open before the data has loaded
+  const month = months.includes(pickedMonth) ? pickedMonth : months.includes(thisMonth()) ? thisMonth() : months[0] ?? thisMonth();
   const [classId, setClassId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [editing, setEditing] = useState<string | null>(null);

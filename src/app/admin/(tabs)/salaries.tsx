@@ -22,7 +22,9 @@ const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new
 export default function Salaries() {
   const { data, generateSalaries, markSalaryPaid, updateSalary, payAllSalaries } = useStore();
   const months = [...new Set(data.salaries.map((s) => s.month))].sort().reverse();
-  const [month, setMonth] = useState(months.includes(thisMonth()) ? thisMonth() : months[0] ?? thisMonth());
+  const [pickedMonth, setMonth] = useState('');
+  // Default to this month (or the latest one); the page can open before the data has loaded
+  const month = months.includes(pickedMonth) ? pickedMonth : months.includes(thisMonth()) ? thisMonth() : months[0] ?? thisMonth();
   const [filter, setFilter] = useState<Filter>('all');
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);

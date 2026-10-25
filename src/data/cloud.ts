@@ -170,6 +170,8 @@ function assemble(raw: Record<string, Docs>): SchoolData {
   for (const name of COLLECTIONS) {
     out[name] = [...(raw[name] ?? new Map()).entries()].map(([id, d]) => ({ ...d, id }));
   }
+  // Firestore returns documents by id; screens expect the newest notice first
+  (out.notices as { createdAt?: string }[]).sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
   // Put salaries back on the teacher records (older data may still have them there)
   const pay = raw.payroll ?? new Map();
   out.users = (out.users as DocData[]).map((u) => (pay.has(u.id as string) ? { ...u, salary: pay.get(u.id as string)!.amount } : u));

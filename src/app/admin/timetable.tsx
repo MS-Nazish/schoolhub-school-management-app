@@ -11,7 +11,9 @@ import { t } from '@/lib/i18n';
 
 export default function AdminTimetable() {
   const { data, setTimetableSlot } = useStore();
-  const [classId, setClassId] = useState(data.classes[0]?.id ?? '');
+  const [pickedClass, setClassId] = useState('');
+  // Fall back to the first class until one is picked (the page can open before the data has loaded)
+  const classId = data.classes.some((c) => c.id === pickedClass) ? pickedClass : data.classes[0]?.id ?? '';
   const [day, setDay] = useState(currentSchoolDay());
   const [editing, setEditing] = useState<number | null>(null);
   const [subject, setSubject] = useState('');

@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Switch, Text, TextInput, View } from 'react-native';
 
 import { colors, radius } from '@/components/theme';
@@ -23,6 +23,13 @@ export default function FeeStructure() {
     return cls ? classFeeItems(cls).map((i) => ({ name: i.name, amount: String(i.amount) })) : [];
   });
   const [applyNow, setApplyNow] = useState(true);
+
+  // Opened with ?class= before the data loaded: fill the editor once the class is available
+  const linkedClass = data.classes.find((c) => c.id === editing);
+  useEffect(() => {
+    if (linkedClass && rows.length === 0) setRows(classFeeItems(linkedClass).map((i) => ({ name: i.name, amount: String(i.amount) })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedClass?.id]);
 
   const startEdit = (classId: string) => {
     const cls = data.classes.find((c) => c.id === classId);

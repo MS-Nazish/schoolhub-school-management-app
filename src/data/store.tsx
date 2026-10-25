@@ -535,6 +535,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       setTimetableSlot: (classId, day, period, subject, teacherId) =>
         update((d) => {
+          if (!classId) return d;
           const id = `${classId}_${day}_${period}`;
           const rest = d.timetable.filter((e) => e.id !== id);
           if (!subject) return { ...d, timetable: rest };

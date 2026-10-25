@@ -55,7 +55,7 @@ export default function Students() {
     <Screen>
       <SectionTitle
         title={`${t('Students')} (${data.students.length})`}
-        right={<Button small icon={showForm ? 'close' : 'add'} title={t(showForm ? 'Cancel' : 'Add')} onPress={() => setShowForm(!showForm)} />}
+        right={<Button small icon={showForm ? 'close' : 'add'} title={t(showForm ? 'Cancel' : 'Add')} onPress={() => { if (!showForm) setForm(emptyForm()); setShowForm(!showForm); }} />}
       />
 
       {showForm && (
