@@ -1,4 +1,5 @@
 import { addDays, isWeekend, monthStr, today } from '@/lib/utils';
+import { STAFF_ATTENDANCE } from './types';
 import type {
   AppNotification, AttendanceRecord, AttendanceStatus, FeeRecord, Message, ResultEntry, SalaryRecord, SchoolData,
   Student, TimetableEntry, User,
@@ -109,20 +110,35 @@ export function createSeedData(): SchoolData {
     };
   });
 
+  const MARKED_BY = ['u-t1', 'u-t3', 'u-t2'];
+  const atTime = (d: string, h: number, m: number) => {
+    const [y, mo, day] = d.split('-').map(Number);
+    return new Date(y!, mo! - 1, day!, h, m).toISOString();
+  };
+
   // Attendance for the last 15 school days (not including today, so teachers can mark it in the demo)
   const attendance: AttendanceRecord[] = [];
   let date = addDays(today(), -1);
   let days = 0;
   while (days < 15) {
     if (!isWeekend(date)) {
-      for (const c of classes) {
+      // Each class is marked by its first-period teacher in the morning
+      classes.forEach((c, ci) => {
         const marks: Record<string, AttendanceStatus> = {};
         students.filter((s) => s.classId === c.id).forEach((s) => {
           const r = rand();
           marks[s.id] = r < 0.08 ? 'A' : r < 0.13 ? 'L' : 'P';
         });
-        attendance.push({ id: `${c.id}_${date}`, classId: c.id, date, takenBy: 'u-t1', marks });
-      }
+        const takenAt = atTime(date, 8, 5 + ci * 6 + Math.floor(rand() * 5));
+        attendance.push({ id: `${c.id}_${date}`, classId: c.id, date, takenBy: MARKED_BY[ci]!, takenAt, marks });
+      });
+      // Staff attendance, marked by the admin
+      const staff: Record<string, AttendanceStatus> = {};
+      users.filter((u) => u.role === 'teacher').forEach((u) => {
+        const r = rand();
+        staff[u.id] = r < 0.06 ? 'A' : r < 0.12 ? 'L' : 'P';
+      });
+      attendance.push({ id: `${STAFF_ATTENDANCE}_${date}`, classId: STAFF_ATTENDANCE, date, takenBy: 'u-admin', takenAt: atTime(date, 7, 55), marks: staff });
       days++;
     }
     date = addDays(date, -1);

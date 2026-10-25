@@ -197,6 +197,27 @@ export const ur: Record<string, string> = {
   'Tap a box on the right and type the marks, then press "Save & publish results".': 'دائیں جانب خانے پر ٹیپ کر کے نمبر لکھیں، پھر "نتائج محفوظ اور شائع کریں" دبائیں۔',
   'Marks': 'نمبر',
 
+  // Attendance register
+  'Attendance register': 'حاضری رجسٹر',
+  'Register': 'رجسٹر',
+  'Each day shows which teacher marked which class, with present/absent/leave, and the staff attendance.': 'ہر دن دکھاتا ہے کہ کس استاد نے کس کلاس کی حاضری لگائی، حاضر/غیر حاضر/چھٹی کے ساتھ، اور اساتذہ کی حاضری۔',
+  'Sunday': 'اتوار',
+  'No student attendance yet': 'ابھی طلباء کی حاضری نہیں',
+  'classes marked': 'کلاسوں کی حاضری لگی',
+  'Staff not marked': 'اساتذہ کی حاضری نہیں لگی',
+  'Staff': 'اساتذہ',
+  'Student attendance by teacher': 'استاد کے لحاظ سے طلباء کی حاضری',
+  'No class has been marked on this day.': 'اس دن کسی کلاس کی حاضری نہیں لگی۔',
+  'class(es)': 'کلاس(یں)',
+  'marked at': 'وقت',
+  'Staff attendance': 'اساتذہ کی حاضری',
+  'Saved at': 'محفوظ',
+  'Update staff attendance': 'اساتذہ کی حاضری اپ ڈیٹ کریں',
+  'Save staff attendance': 'اساتذہ کی حاضری محفوظ کریں',
+  'Staff attendance saved': 'اساتذہ کی حاضری محفوظ ہو گئی',
+  '{p} present · {a} absent · {l} on leave': '{p} حاضر · {a} غیر حاضر · {l} چھٹی پر',
+  'Show 7 more days': 'مزید 7 دن دکھائیں',
+
   // Challans
   '{n} student(s) have no voucher for {month}: {names}': '{month} کے لیے {n} طلباء کا واؤچر نہیں: {names}',
   'Create missing vouchers': 'باقی واؤچر بنائیں',

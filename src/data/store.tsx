@@ -15,6 +15,7 @@ import {
   commitChanges, emptySchool, ensureLogin, isDatabaseEmpty, loadMe, reconcile, seedDemoSchool, subscribeSchool,
 } from './cloud';
 import { DEFAULT_SALARY, MONTHLY_FEE, createSeedData } from './seed';
+import { STAFF_ATTENDANCE } from './types';
 import type {
   AppNotification, AttendanceStatus, Audience, ClassRoom, FeeItem, FeeRecord, Homework, Lang, Notice, NotificationKind, ResultEntry, SalaryRecord,
   SchoolData, Settings, Student, ThemeMode, User,
@@ -66,6 +67,8 @@ interface StoreValue {
   addClass: (name: string) => void;
 
   saveAttendance: (classId: string, date: string, marks: Record<string, AttendanceStatus>) => void;
+  /** Admin marks teachers present/absent/leave for a day */
+  saveStaffAttendance: (date: string, marks: Record<string, AttendanceStatus>) => void;
   addHomework: (h: Omit<Homework, 'id' | 'createdAt' | 'teacherId'>) => void;
   deleteHomework: (id: string) => void;
   saveResults: (exam: string, subject: string, total: number, marks: Record<string, number>) => void;
@@ -394,7 +397,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveAttendance: (classId, date, marks) =>
         update((d) => {
           const id = `${classId}_${date}`;
-          const record = { id, classId, date, marks, takenBy: me };
+          const record = { id, classId, date, marks, takenBy: me, takenAt: new Date().toISOString() };
           // Alert parents of absent students, but only the first time a student is marked absent that day
           const before = d.attendance.find((a) => a.id === id)?.marks ?? {};
           const newlyAbsent = d.students.filter((s) => marks[s.id] === 'A' && before[s.id] !== 'A');
@@ -405,6 +408,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             attendance: [...d.attendance.filter((a) => a.id !== id), record],
             notifications: [...notes, ...d.notifications],
           };
+        }),
+
+      saveStaffAttendance: (date, marks) =>
+        update((d) => {
+          const id = `${STAFF_ATTENDANCE}_${date}`;
+          const record = { id, classId: STAFF_ATTENDANCE, date, marks, takenBy: me, takenAt: new Date().toISOString() };
+          return { ...d, attendance: [...d.attendance.filter((a) => a.id !== id), record] };
         }),
 
       addHomework: (h) =>
@@ -620,7 +630,7 @@ export function attendanceStats(data: SchoolData, studentId: string) {
 }
 
 export function todayAttendancePct(data: SchoolData) {
-  const recs = data.attendance.filter((a) => a.date === today());
+  const recs = data.attendance.filter((a) => a.date === today() && a.classId !== STAFF_ATTENDANCE);
   const marks = recs.flatMap((r) => Object.values(r.marks));
   if (!marks.length) return null;
   return Math.round((marks.filter((m) => m === 'P').length / marks.length) * 100);

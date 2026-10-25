@@ -10,6 +10,7 @@ export default function AdminLayout() {
         { name: 'teacher/[id]', title: 'Edit teacher' },
         { name: 'student/[id]', title: 'Edit student' },
         { name: 'fee-structure', title: 'Fee structure' },
+        { name: 'attendance', title: 'Attendance register' },
       ]}
     />
   );

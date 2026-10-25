@@ -47,13 +47,19 @@ export interface Student {
 
 export type AttendanceStatus = 'P' | 'A' | 'L';
 
+/** Class id used for staff (teacher) attendance records, stored alongside student attendance */
+export const STAFF_ATTENDANCE = 'staff';
+
 export interface AttendanceRecord {
-  /** `${classId}_${date}` */
+  /** `${classId}_${date}`; staff attendance uses classId STAFF_ATTENDANCE */
   id: string;
   classId: string;
   date: string; // YYYY-MM-DD
+  /** Who marked it (teacher, or admin for staff attendance) */
   takenBy: string;
-  marks: Record<string, AttendanceStatus>; // studentId -> status
+  /** When it was last saved (ISO time) */
+  takenAt?: string;
+  marks: Record<string, AttendanceStatus>; // studentId (or teacherId for staff) -> status
 }
 
 export interface Homework {

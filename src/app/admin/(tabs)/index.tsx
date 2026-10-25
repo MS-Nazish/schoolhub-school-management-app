@@ -31,6 +31,7 @@ export default function AdminDashboard() {
       </StatGrid>
 
       <QuickActions items={[
+        { icon: 'checkbox', label: t('Attendance'), color: colors.info, soft: colors.infoSoft, onPress: () => router.push('/admin/attendance') },
         { icon: 'time', label: t('Timetable'), color: colors.primary, soft: colors.primarySoft, onPress: () => router.push('/admin/timetable') },
         { icon: 'megaphone', label: t('Notices'), color: colors.warning, soft: colors.warningSoft, onPress: () => router.push('/admin/notices') },
         { icon: 'cash', label: t('Salaries'), color: colors.success, soft: colors.successSoft, onPress: () => router.push('/admin/salaries') },
@@ -73,7 +74,8 @@ export default function AdminDashboard() {
         </View>
       </Card>
 
-      <SectionTitle title={t("Today's attendance by class")} />
+      <SectionTitle title={t("Today's attendance by class")}
+        right={<Button small variant="ghost" title={t('Register')} onPress={() => router.push('/admin/attendance')} />} />
       <Card>
         {data.classes.map((c) => {
           const rec = data.attendance.find((a) => a.id === `${c.id}_${today()}`);
