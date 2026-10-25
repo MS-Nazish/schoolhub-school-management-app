@@ -7,6 +7,7 @@ export default function AdminLayout() {
       pages={[
         { name: 'timetable', title: 'Timetable' },
         { name: 'notices', title: 'Notices' },
+        { name: 'teacher/[id]', title: 'Edit teacher' },
       ]}
     />
   );

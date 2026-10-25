@@ -16,7 +16,7 @@ import {
 } from './cloud';
 import { DEFAULT_SALARY, MONTHLY_FEE, createSeedData } from './seed';
 import type {
-  AppNotification, AttendanceStatus, Audience, ClassRoom, Homework, Lang, Notice, NotificationKind, ResultEntry,
+  AppNotification, AttendanceStatus, Audience, ClassRoom, Homework, Lang, Notice, NotificationKind, ResultEntry, SalaryRecord,
   SchoolData, Settings, Student, ThemeMode, User,
 } from './types';
 import { applyTheme } from '@/components/theme';
@@ -76,6 +76,10 @@ interface StoreValue {
   setClassFee: (classId: string, amount: number) => void;
   generateSalaries: (month: string) => number;
   markSalaryPaid: (id: string) => void;
+  /** Edit a month's salary (amount, bonus, deduction, note, paid/unpaid, paid date) */
+  updateSalary: (id: string, patch: Partial<Omit<SalaryRecord, 'id' | 'teacherId' | 'month'>>) => void;
+  /** Marks every unpaid salary of the month as paid; returns how many */
+  payAllSalaries: (month: string) => number;
 
   setTimetableSlot: (classId: string, day: number, period: number, subject: string | null, teacherId?: string) => void;
 
@@ -89,6 +93,36 @@ interface StoreValue {
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
+
+/** Salary after bonus and deduction */
+export const netSalary = (s: Pick<SalaryRecord, 'amount' | 'bonus' | 'deduction'>) =>
+  s.amount + (s.bonus ?? 0) - (s.deduction ?? 0);
+
+/**
+ * Applies a change to salary records; teachers are notified when a salary becomes paid.
+ * Marking unpaid clears the paid date; marking paid without a date uses today.
+ */
+function updateSalaryRecords(
+  update: (fn: (d: SchoolData) => SchoolData) => void,
+  ids: string[],
+  patch: Partial<SalaryRecord>,
+) {
+  update((d) => {
+    const notes: AppNotification[] = [];
+    const salaries = d.salaries.map((s) => {
+      if (!ids.includes(s.id)) return s;
+      const next: SalaryRecord = { ...s, ...patch };
+      if (next.status === 'unpaid') next.paidOn = undefined;
+      else next.paidOn = next.paidOn ?? today();
+      if (s.status !== 'paid' && next.status === 'paid') {
+        notes.push(...makeNotes([s.teacherId], 'salary', 'Salary paid',
+          `${money(netSalary(next))} for ${formatMonth(s.month)} has been paid.`));
+      }
+      return next;
+    });
+    return { ...d, salaries, notifications: [...notes, ...d.notifications] };
+  });
+}
 
 /** Build in-app notifications for several users */
 function makeNotes(userIds: string[], kind: NotificationKind, title: string, body: string): AppNotification[] {
@@ -443,20 +477,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }));
         return missing.length;
       },
-      markSalaryPaid: (id) =>
-        update((d) => {
-          const rec = d.salaries.find((s) => s.id === id);
-          if (!rec) return d;
-          return {
-            ...d,
-            salaries: d.salaries.map((s) => (s.id === id ? { ...s, status: 'paid', paidOn: today() } : s)),
-            notifications: [
-              ...makeNotes([rec.teacherId], 'salary', 'Salary paid',
-                `${money(rec.amount)} for ${formatMonth(rec.month)} has been paid.`),
-              ...d.notifications,
-            ],
-          };
-        }),
+      markSalaryPaid: (id) => updateSalaryRecords(update, [id], { status: 'paid' }),
+      updateSalary: (id, patch) => updateSalaryRecords(update, [id], patch),
+      payAllSalaries: (month) => {
+        const ids = data.salaries.filter((s) => s.month === month && s.status === 'unpaid').map((s) => s.id);
+        if (ids.length) updateSalaryRecords(update, ids, { status: 'paid' });
+        return ids.length;
+      },
 
       setTimetableSlot: (classId, day, period, subject, teacherId) =>
         update((d) => {
@@ -541,9 +568,10 @@ export function feeSummary(data: SchoolData, month = thisMonth()) {
 
 export function salarySummary(data: SchoolData, month = thisMonth()) {
   const recs = data.salaries.filter((s) => s.month === month);
-  const paid = recs.filter((s) => s.status === 'paid').reduce((n, s) => n + s.amount, 0);
-  const unpaid = recs.filter((s) => s.status === 'unpaid').reduce((n, s) => n + s.amount, 0);
-  return { total: paid + unpaid, paid, unpaid, paidCount: recs.filter((s) => s.status === 'paid').length, count: recs.length };
+  const paid = recs.filter((s) => s.status === 'paid').reduce((n, s) => n + netSalary(s), 0);
+  const unpaid = recs.filter((s) => s.status === 'unpaid').reduce((n, s) => n + netSalary(s), 0);
+  const paidCount = recs.filter((s) => s.status === 'paid').length;
+  return { total: paid + unpaid, paid, unpaid, paidCount, unpaidCount: recs.length - paidCount, count: recs.length };
 }
 
 export const className = classNameOf;

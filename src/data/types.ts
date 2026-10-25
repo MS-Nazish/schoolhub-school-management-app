@@ -86,7 +86,11 @@ export interface SalaryRecord {
   id: string;
   teacherId: string;
   month: string; // YYYY-MM
+  /** Basic salary for the month */
   amount: number;
+  bonus?: number;
+  deduction?: number;
+  note?: string;
   status: PayStatus;
   paidOn?: string;
 }
