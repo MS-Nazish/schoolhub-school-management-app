@@ -72,7 +72,8 @@ interface StoreValue {
   /** One student's marks for several subjects of an exam (subjects not in `rows` are left as they are) */
   saveMarksheet: (studentId: string, exam: string, rows: { subject: string; marks: number; total: number }[]) => void;
 
-  generateFees: (month: string) => number;
+  /** Creates the month's missing vouchers (for one class, or every class); returns how many */
+  generateFees: (month: string, classId?: string) => number;
   markFeePaid: (id: string) => void;
   /** Admin correction: marks a paid fee as unpaid again */
   markFeeUnpaid: (id: string) => void;
@@ -344,7 +345,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             id: uid(), name, classId, parentId: parent.id, rollNo: rollNo || nextRoll,
             gender: details.gender, dob: details.dob, address: details.address, admissionDate: details.admissionDate || today(),
           };
-          return { ...d, users, students: [...d.students, student] };
+          // New students get this month's fee voucher straight away (from their class's fee structure)
+          const items = classFeeItems(d.classes.find((c) => c.id === classId));
+          const month = thisMonth();
+          const voucher: FeeRecord = {
+            id: `${student.id}_${month}`, studentId: student.id, month, items, amount: feeItemsTotal(items), status: 'unpaid',
+          };
+          return {
+            ...d,
+            users,
+            students: [...d.students, student],
+            fees: [...d.fees, voucher],
+            notifications: [
+              ...makeNotes([parent.id], 'fee', `Fee voucher: ${formatMonth(month)}`,
+                `${name}: monthly fee of ${money(voucher.amount)} is due.`),
+              ...d.notifications,
+            ],
+          };
         });
       },
       updateUser: (id, patch) =>
@@ -434,8 +451,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           };
         }),
 
-      generateFees: (month) => {
-        const missing = data.students.filter((s) => !data.fees.some((f) => f.id === `${s.id}_${month}`));
+      generateFees: (month, classId) => {
+        const missing = data.students.filter((s) => (!classId || s.classId === classId) && !data.fees.some((f) => f.id === `${s.id}_${month}`));
+        if (!missing.length) return 0;
         update((d) => {
           // Each class has its own fee structure
           const itemsFor = (classId: string) => classFeeItems(d.classes.find((c) => c.id === classId));

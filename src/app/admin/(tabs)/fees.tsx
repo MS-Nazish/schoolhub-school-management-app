@@ -11,6 +11,7 @@ import {
 import { classFeeItems, feeItemsTotal, netFee, useStore } from '@/data/store';
 import type { FeeRecord, PayStatus, SchoolData } from '@/data/types';
 import { t } from '@/lib/i18n';
+import { shareChallan, shareClassChallans } from '@/lib/challan';
 import { shareFeeReceipt } from '@/lib/receipt';
 import { confirmAction, formatMonth, money, nextMonth, notify, thisMonth, today } from '@/lib/utils';
 
@@ -68,6 +69,14 @@ export default function Fees() {
   const receipt = async (fee: FeeRecord) => {
     try {
       await shareFeeReceipt(data, fee);
+    } catch (e) {
+      notify(t('Could not create PDF'), e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const pdf = async (make: () => Promise<void>) => {
+    try {
+      await make();
     } catch (e) {
       notify(t('Could not create PDF'), e instanceof Error ? e.message : String(e));
     }
@@ -133,6 +142,31 @@ export default function Fees() {
           </View>
         </Card>
 
+        {(() => {
+          const missing = data.students.filter((st) => st.classId === cls.id && !data.fees.some((f) => f.id === `${st.id}_${month}`));
+          return missing.length > 0 && (
+            <Card style={{ backgroundColor: colors.warningSoft }}>
+              <Text style={[styles.body, { color: colors.warning, fontWeight: '700', marginBottom: 8 }]}>
+                {t('{n} student(s) have no voucher for {month}: {names}', { n: missing.length, month: formatMonth(month), names: missing.map((m) => m.name).join(', ') })}
+              </Text>
+              <Button small icon="add-circle-outline" title={t('Create missing vouchers')} onPress={() => {
+                const n = generateFees(month, cls.id);
+                notify(t('Vouchers created'), t('{n} voucher(s) created. Parents have been notified.', { n }));
+              }} />
+            </Card>
+          );
+        })()}
+
+        {s.vouchers > 0 && (
+          <Button small variant="outline" icon="print-outline" title={`${t('Print all challans')} (${s.vouchers})`} style={{ marginBottom: 12 }}
+            onPress={() => pdf(() => shareClassChallans(
+              data,
+              data.students.filter((st) => st.classId === cls.id).sort((a, b) => a.rollNo - b.rollNo)
+                .map((st) => data.fees.find((f) => f.id === `${st.id}_${month}`)).filter((f): f is FeeRecord => !!f),
+              `${cls.name} Challans ${formatMonth(month)}`,
+            ))} />
+        )}
+
         <Chips<Filter>
           options={[
             { label: `${t('All')} (${s.vouchers})`, value: 'all' },
@@ -167,7 +201,10 @@ export default function Fees() {
                     confirmAction(t('Mark as paid'), `${student.name} — ${money(netFee(fee))}`, () => markFeePaid(fee.id))} />
                 ))}
                 {fee && !open && (
-                  <IconButton icon="create-outline" color={colors.primary} label={`${t('Edit voucher')}: ${student.name}`} onPress={() => startEdit(fee)} />
+                  <>
+                    <IconButton icon="document-text-outline" color={colors.primary} label={`${t('Fee challan')}: ${student.name}`} onPress={() => pdf(() => shareChallan(data, fee))} />
+                    <IconButton icon="create-outline" color={colors.primary} label={`${t('Edit voucher')}: ${student.name}`} onPress={() => startEdit(fee)} />
+                  </>
                 )}
               </View>
 

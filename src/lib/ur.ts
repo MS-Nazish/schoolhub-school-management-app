@@ -197,6 +197,15 @@ export const ur: Record<string, string> = {
   'Tap a box on the right and type the marks, then press "Save & publish results".': 'دائیں جانب خانے پر ٹیپ کر کے نمبر لکھیں، پھر "نتائج محفوظ اور شائع کریں" دبائیں۔',
   'Marks': 'نمبر',
 
+  // Challans
+  '{n} student(s) have no voucher for {month}: {names}': '{month} کے لیے {n} طلباء کا واؤچر نہیں: {names}',
+  'Create missing vouchers': 'باقی واؤچر بنائیں',
+  'Vouchers created': 'واؤچر بن گئے',
+  '{n} voucher(s) created. Parents have been notified.': '{n} واؤچر بن گئے۔ والدین کو اطلاع دے دی گئی ہے۔',
+  'Print all challans': 'تمام چالان پرنٹ کریں',
+  'Fee challan': 'فیس چالان',
+  'Download challan': 'چالان ڈاؤن لوڈ کریں',
+
   // Fee structure and vouchers
   'Fee structure': 'فیس کا ڈھانچہ',
   'Monthly total': 'ماہانہ کل',

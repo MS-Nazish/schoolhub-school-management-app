@@ -5,6 +5,7 @@ import { colors } from '@/components/theme';
 import { Badge, Button, Card, EmptyState, IconButton, Screen, SectionTitle, styles } from '@/components/ui';
 import { netFee, useStore } from '@/data/store';
 import { t } from '@/lib/i18n';
+import { shareChallan } from '@/lib/challan';
 import { shareFeeReceipt } from '@/lib/receipt';
 import { confirmAction, formatMonth, money, notify } from '@/lib/utils';
 
@@ -53,6 +54,8 @@ export default function ParentFees() {
                 })} />
             )}
           </View>
+          <Button small variant="outline" icon="document-text-outline" title={t('Download challan')} style={{ marginTop: 10 }}
+            onPress={() => shareChallan(data, f).catch((e: Error) => notify(t('Could not create PDF'), e.message))} />
         </Card>
       ))}
     </Screen>
