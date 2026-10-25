@@ -1,0 +1,53 @@
+# Files left out of EAS build uploads. Same as .gitignore, except .env is kept
+# so the APK gets the Firebase config (.env itself never goes to GitHub).
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files (.env is uploaded on purpose)
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# Firebase emulator logs
+*-debug.log
+
+# Local editor/agent tooling
+.claude/
+
+# Tests and emulator files are not needed in the app
+tests/
+firebase.json
+firestore.rules
