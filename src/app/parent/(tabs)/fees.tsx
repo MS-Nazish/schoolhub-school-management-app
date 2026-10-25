@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { ChildSwitcher, useChild } from '@/components/ChildContext';
 import { colors } from '@/components/theme';
 import { Badge, Button, Card, EmptyState, IconButton, Screen, SectionTitle, styles } from '@/components/ui';
-import { useStore } from '@/data/store';
+import { netFee, useStore } from '@/data/store';
 import { t } from '@/lib/i18n';
 import { shareFeeReceipt } from '@/lib/receipt';
 import { confirmAction, formatMonth, money, notify } from '@/lib/utils';
@@ -14,7 +14,7 @@ export default function ParentFees() {
   if (!child) return <Screen><EmptyState text={t('No children linked to your account')} /></Screen>;
 
   const fees = data.fees.filter((f) => f.studentId === child.id).sort((a, b) => b.month.localeCompare(a.month));
-  const due = fees.filter((f) => f.status === 'unpaid').reduce((s, f) => s + f.amount, 0);
+  const due = fees.filter((f) => f.status === 'unpaid').reduce((s, f) => s + netFee(f), 0);
 
   return (
     <Screen>
@@ -31,8 +31,13 @@ export default function ParentFees() {
         <Card key={f.id}>
           <View style={[styles.row, { justifyContent: 'space-between' }]}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.listTitle}>{formatMonth(f.month)} — {t('Tuition fee')}</Text>
-              <Text style={styles.muted}>{money(f.amount)}{f.paidOn ? ` · ${t('Paid on')} ${f.paidOn}` : ''}</Text>
+              <Text style={styles.listTitle}>{formatMonth(f.month)} — {money(netFee(f))}</Text>
+              <Text style={styles.muted}>
+                {(f.items ?? [{ name: 'Tuition fee', amount: f.amount }]).map((i) => `${t(i.name)} ${money(i.amount)}`).join(' · ')}
+              </Text>
+              {!!f.discount && <Text style={[styles.muted, { color: colors.success }]}>− {money(f.discount)} {t('discount')}</Text>}
+              {!!f.fine && <Text style={[styles.muted, { color: colors.danger }]}>+ {money(f.fine)} {t('late fine')}</Text>}
+              {!!f.paidOn && <Text style={styles.muted}>{t('Paid on')} {f.paidOn}</Text>}
             </View>
             {f.status === 'paid' ? (
               <View style={[styles.row, { gap: 4 }]}>
@@ -42,7 +47,7 @@ export default function ParentFees() {
               </View>
             ) : (
               <Button small title={t('Pay now')} icon="card-outline" onPress={() =>
-                confirmAction(t('Demo payment'), `${money(f.amount)} · ${formatMonth(f.month)}\n${t('No real money is charged.')}`, () => {
+                confirmAction(t('Demo payment'), `${money(netFee(f))} · ${formatMonth(f.month)}\n${t('No real money is charged.')}`, () => {
                   markFeePaid(f.id);
                   notify(t('Payment successful'), t('The receipt has been recorded.'));
                 })} />

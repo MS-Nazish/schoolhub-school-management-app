@@ -16,7 +16,7 @@ import {
 } from './cloud';
 import { DEFAULT_SALARY, MONTHLY_FEE, createSeedData } from './seed';
 import type {
-  AppNotification, AttendanceStatus, Audience, ClassRoom, Homework, Lang, Notice, NotificationKind, ResultEntry, SalaryRecord,
+  AppNotification, AttendanceStatus, Audience, ClassRoom, FeeItem, FeeRecord, Homework, Lang, Notice, NotificationKind, ResultEntry, SalaryRecord,
   SchoolData, Settings, Student, ThemeMode, User,
 } from './types';
 import { applyTheme } from '@/components/theme';
@@ -78,7 +78,10 @@ interface StoreValue {
   markFeeUnpaid: (id: string) => void;
   /** Notifies parents with unpaid fees for a month (one class, or all); returns how many were reminded */
   sendFeeReminders: (month: string, classId?: string) => number;
-  setClassFee: (classId: string, amount: number) => void;
+  /** Replace a class's fee heads; optionally re-price that month's unpaid vouchers */
+  setClassFeeItems: (classId: string, items: FeeItem[], applyToMonth?: string) => void;
+  /** Edit one voucher (discount, fine, note, paid/unpaid, paid date) */
+  updateFee: (id: string, patch: Partial<Pick<FeeRecord, 'discount' | 'fine' | 'note' | 'status' | 'paidOn'>>) => void;
   generateSalaries: (month: string) => number;
   markSalaryPaid: (id: string) => void;
   /** Edit a month's salary (amount, bonus, deduction, note, paid/unpaid, paid date) */
@@ -98,6 +101,16 @@ interface StoreValue {
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
+
+/** A class's monthly fee heads (falls back to a single tuition fee for older data) */
+export const classFeeItems = (cls?: ClassRoom): FeeItem[] =>
+  cls?.feeItems?.length ? cls.feeItems : [{ name: 'Tuition fee', amount: cls?.monthlyFee ?? MONTHLY_FEE }];
+
+export const feeItemsTotal = (items: FeeItem[]) => items.reduce((n, i) => n + i.amount, 0);
+
+/** What the parent actually pays: fee heads − discount + fine */
+export const netFee = (f: Pick<FeeRecord, 'amount' | 'discount' | 'fine'>) =>
+  f.amount - (f.discount ?? 0) + (f.fine ?? 0);
 
 /** Salary after bonus and deduction */
 export const netSalary = (s: Pick<SalaryRecord, 'amount' | 'bonus' | 'deduction'>) =>
@@ -424,19 +437,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       generateFees: (month) => {
         const missing = data.students.filter((s) => !data.fees.some((f) => f.id === `${s.id}_${month}`));
         update((d) => {
-          // Each class can have its own monthly fee
-          const feeFor = (classId: string) => d.classes.find((c) => c.id === classId)?.monthlyFee ?? MONTHLY_FEE;
+          // Each class has its own fee structure
+          const itemsFor = (classId: string) => classFeeItems(d.classes.find((c) => c.id === classId));
           return {
             ...d,
             fees: [
               ...d.fees,
-              ...missing.map((s) => ({
-                id: `${s.id}_${month}`, studentId: s.id, month, amount: feeFor(s.classId), status: 'unpaid' as const,
-              })),
+              ...missing.map((s) => {
+                const items = itemsFor(s.classId);
+                return {
+                  id: `${s.id}_${month}`, studentId: s.id, month, items, amount: feeItemsTotal(items), status: 'unpaid' as const,
+                };
+              }),
             ],
             notifications: [
               ...missing.flatMap((s) => makeNotes([s.parentId], 'fee', `Fee voucher: ${formatMonth(month)}`,
-                `${s.name}: tuition fee of ${money(feeFor(s.classId))} is due.`)),
+                `${s.name}: monthly fee of ${money(feeItemsTotal(itemsFor(s.classId)))} is due.`)),
               ...d.notifications,
             ],
           };
@@ -463,15 +479,37 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             ...d,
             notifications: [
               ...due.flatMap(({ fee, student }) => makeNotes([student!.parentId], 'fee', `Fee reminder: ${formatMonth(month)}`,
-                `${student!.name}'s tuition fee of ${money(fee.amount)} is still unpaid. Please pay before the 10th.`)),
+                `${student!.name}'s fee of ${money(netFee(fee))} is still unpaid. Please pay before the 10th.`)),
               ...d.notifications,
             ],
           }));
         }
         return due.length;
       },
-      setClassFee: (classId, amount) =>
-        update((d) => ({ ...d, classes: d.classes.map((c) => (c.id === classId ? { ...c, monthlyFee: amount } : c)) })),
+      setClassFeeItems: (classId, items, applyToMonth) =>
+        update((d) => {
+          const studentIds = new Set(d.students.filter((s) => s.classId === classId).map((s) => s.id));
+          return {
+            ...d,
+            classes: d.classes.map((c) => (c.id === classId ? { ...c, feeItems: items, monthlyFee: feeItemsTotal(items) } : c)),
+            // Optionally re-price that month's unpaid vouchers for the class (discounts and fines are kept)
+            fees: applyToMonth
+              ? d.fees.map((f) => (f.month === applyToMonth && f.status === 'unpaid' && studentIds.has(f.studentId)
+                ? { ...f, items, amount: feeItemsTotal(items) } : f))
+              : d.fees,
+          };
+        }),
+      updateFee: (id, patch) =>
+        update((d) => ({
+          ...d,
+          fees: d.fees.map((f) => {
+            if (f.id !== id) return f;
+            const next: FeeRecord = { ...f, ...patch };
+            if (next.status === 'unpaid') next.paidOn = undefined;
+            else next.paidOn = next.paidOn ?? today();
+            return next;
+          }),
+        })),
 
       generateSalaries: (month) => {
         const teachers = data.users.filter((u) => u.role === 'teacher');
@@ -571,8 +609,8 @@ export function todayAttendancePct(data: SchoolData) {
 
 export function feeSummary(data: SchoolData, month = thisMonth()) {
   const fees = data.fees.filter((f) => f.month === month);
-  const collected = fees.filter((f) => f.status === 'paid').reduce((s, f) => s + f.amount, 0);
-  const pending = fees.filter((f) => f.status === 'unpaid').reduce((s, f) => s + f.amount, 0);
+  const collected = fees.filter((f) => f.status === 'paid').reduce((s, f) => s + netFee(f), 0);
+  const pending = fees.filter((f) => f.status === 'unpaid').reduce((s, f) => s + netFee(f), 0);
   return { collected, pending, paidCount: fees.filter((f) => f.status === 'paid').length, count: fees.length };
 }
 

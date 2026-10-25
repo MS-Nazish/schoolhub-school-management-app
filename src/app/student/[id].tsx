@@ -7,7 +7,7 @@ import { Pressable, Text, View } from 'react-native';
 import { colors } from '@/components/theme';
 import { Avatar, Badge, Banner, Button, Card, EmptyState, InfoRow, ProgressBar, Screen, SectionTitle, StatCard, StatGrid, styles } from '@/components/ui';
 import { EXAMS } from '@/data/seed';
-import { attendanceStats, className, useStore } from '@/data/store';
+import { attendanceStats, className, netFee, useStore } from '@/data/store';
 import { t } from '@/lib/i18n';
 import { shareReportCard } from '@/lib/reportCard';
 import { formatDate, formatMonth, grade, money, notify } from '@/lib/utils';
@@ -32,7 +32,7 @@ export default function StudentProfile() {
   const results = data.results.filter((r) => r.studentId === student.id);
   const avg = results.length ? Math.round(results.reduce((s, r) => s + (r.marks / r.total) * 100, 0) / results.length) : null;
   const fees = data.fees.filter((f) => f.studentId === student.id).sort((a, b) => b.month.localeCompare(a.month));
-  const unpaid = fees.filter((f) => f.status === 'unpaid').reduce((s, f) => s + f.amount, 0);
+  const unpaid = fees.filter((f) => f.status === 'unpaid').reduce((s, f) => s + netFee(f), 0);
   const latestExam = [...EXAMS].reverse().find((e) => results.some((r) => r.exam === e));
 
   const pickPhoto = async () => {
@@ -148,7 +148,7 @@ export default function StudentProfile() {
             {fees.length === 0 && <EmptyState text={t('No fee records')} />}
             {fees.map((f) => (
               <View key={f.id} style={[styles.row, { justifyContent: 'space-between', paddingVertical: 8 }]}>
-                <Text style={styles.body}>{formatMonth(f.month)} · {money(f.amount)}</Text>
+                <Text style={styles.body}>{formatMonth(f.month)} · {money(netFee(f))}</Text>
                 <Badge text={t(f.status === 'paid' ? 'Paid' : 'Unpaid')}
                   color={f.status === 'paid' ? colors.success : colors.danger} soft={f.status === 'paid' ? colors.successSoft : colors.dangerSoft} />
               </View>

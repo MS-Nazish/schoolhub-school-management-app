@@ -27,6 +27,14 @@ export const PERIODS = [
 ];
 export const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+/** Monthly fee heads for a demo class */
+const feeStructure = (tuition: number, computer: number, sports: number, exam: number) => [
+  { name: 'Tuition fee', amount: tuition },
+  { name: 'Computer lab', amount: computer },
+  { name: 'Sports', amount: sports },
+  { name: 'Exam fee', amount: exam },
+];
+
 // Small deterministic random generator so the demo data looks the same every reset
 const rng = (seed: number) => () => {
   seed = (seed * 9301 + 49297) % 233280;
@@ -39,9 +47,9 @@ export function createSeedData(): SchoolData {
   const iso = (minsAgo: number) => new Date(now - minsAgo * 60000).toISOString();
 
   const classes = [
-    { id: 'c6', name: 'Class 6-A', monthlyFee: 5000 },
-    { id: 'c7', name: 'Class 7-A', monthlyFee: 5500 },
-    { id: 'c8', name: 'Class 8-A', monthlyFee: 6000 },
+    { id: 'c6', name: 'Class 6-A', feeItems: feeStructure(4000, 500, 300, 200) },
+    { id: 'c7', name: 'Class 7-A', feeItems: feeStructure(4400, 500, 300, 300) },
+    { id: 'c8', name: 'Class 8-A', feeItems: feeStructure(4800, 600, 300, 300) },
   ];
 
   const users: User[] = [
@@ -138,15 +146,16 @@ export function createSeedData(): SchoolData {
   const prev = monthStr(d);
   const fees: FeeRecord[] = [];
   for (const s of students) {
-    const fee = classes.find((c) => c.id === s.classId)?.monthlyFee ?? MONTHLY_FEE;
+    const items = classes.find((c) => c.id === s.classId)!.feeItems;
+    const fee = items.reduce((n, i) => n + i.amount, 0);
     const prevPaid = rand() > 0.15;
     fees.push({
-      id: `${s.id}_${prev}`, studentId: s.id, month: prev, amount: fee,
+      id: `${s.id}_${prev}`, studentId: s.id, month: prev, items, amount: fee,
       status: prevPaid ? 'paid' : 'unpaid', paidOn: prevPaid ? `${prev}-05` : undefined,
     });
     const curPaid = rand() > 0.6;
     fees.push({
-      id: `${s.id}_${cur}`, studentId: s.id, month: cur, amount: fee,
+      id: `${s.id}_${cur}`, studentId: s.id, month: cur, items, amount: fee,
       status: curPaid ? 'paid' : 'unpaid', paidOn: curPaid ? `${cur}-03` : undefined,
     });
   }

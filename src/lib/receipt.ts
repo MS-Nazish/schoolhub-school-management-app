@@ -1,7 +1,7 @@
 import { escapeHtml as esc, sharePdf } from './print';
 import { formatDate, formatMonth, money, today } from './utils';
 import { SCHOOL_NAME } from '@/data/seed';
-import { className, userName } from '@/data/store';
+import { className, netFee, userName } from '@/data/store';
 import type { FeeRecord, SchoolData } from '@/data/types';
 
 export function feeReceiptHtml(data: SchoolData, fee: FeeRecord) {
@@ -21,6 +21,11 @@ export function feeReceiptHtml(data: SchoolData, fee: FeeRecord) {
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     td { padding: 8px 4px; border-bottom: 1px solid #E5E7EB; }
     td.l { color: #6B7280; width: 45%; }
+    td.r { text-align: right; font-weight: 600; }
+    td.minus { color: #16A34A; }
+    td.plus { color: #DC2626; }
+    h3 { margin: 18px 0 6px; font-size: 14px; color: #3730A3; }
+    .note { font-size: 13px; color: #374151; }
     .amount { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; background: #EEF2FF; border-radius: 10px; padding: 14px; }
     .amount b { font-size: 24px; color: #3730A3; }
     .paid { display: inline-block; margin-top: 16px; border: 3px solid #16A34A; color: #16A34A; font-weight: 800; letter-spacing: 3px; padding: 6px 16px; border-radius: 8px; transform: rotate(-6deg); }
@@ -38,10 +43,17 @@ export function feeReceiptHtml(data: SchoolData, fee: FeeRecord) {
       ${row('Student', student?.name ?? '—')}
       ${row('Class / Roll No.', student ? `${className(data, student.classId)} · #${student.rollNo}` : '—')}
       ${row('Father / Guardian', student ? userName(data, student.parentId) : '—')}
-      ${row('Fee for', `Tuition fee · ${formatMonth(fee.month)}`)}
+      ${row('Fee for', formatMonth(fee.month))}
       ${row('Paid on', fee.paidOn ? formatDate(fee.paidOn) : '—')}
     </table>
-    <div class="amount"><span>Amount received</span><b>${money(fee.amount)}</b></div>
+    <h3>Fee details</h3>
+    <table>
+      ${(fee.items ?? [{ name: 'Tuition fee', amount: fee.amount }]).map((i) => `<tr><td class="l">${esc(i.name)}</td><td class="r">${money(i.amount)}</td></tr>`).join('')}
+      ${fee.discount ? `<tr><td class="l">Discount</td><td class="r minus">− ${money(fee.discount)}</td></tr>` : ''}
+      ${fee.fine ? `<tr><td class="l">Late fine</td><td class="r plus">+ ${money(fee.fine)}</td></tr>` : ''}
+    </table>
+    ${fee.note ? `<p class="note"><b>Note:</b> ${esc(fee.note)}</p>` : ''}
+    <div class="amount"><span>Amount received</span><b>${money(netFee(fee))}</b></div>
     <div class="paid">PAID</div>
     <div class="sign"><span>Accounts Office</span></div>
     <div class="foot">Computer generated receipt · printed ${formatDate(today())}</div>

@@ -9,6 +9,7 @@ export default function AdminLayout() {
         { name: 'notices', title: 'Notices' },
         { name: 'teacher/[id]', title: 'Edit teacher' },
         { name: 'student/[id]', title: 'Edit student' },
+        { name: 'fee-structure', title: 'Fee structure' },
       ]}
     />
   );

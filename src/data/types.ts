@@ -16,10 +16,18 @@ export interface User {
   salary?: number;
 }
 
+/** One line of a fee structure or voucher, e.g. "Tuition fee: 4000" */
+export interface FeeItem {
+  name: string;
+  amount: number;
+}
+
 export interface ClassRoom {
   id: string;
   name: string;
-  /** Monthly tuition fee for new vouchers (defaults to MONTHLY_FEE) */
+  /** Monthly fee heads for new vouchers */
+  feeItems?: FeeItem[];
+  /** Older single monthly fee, used when feeItems is not set */
   monthlyFee?: number;
 }
 
@@ -76,7 +84,13 @@ export interface FeeRecord {
   id: string;
   studentId: string;
   month: string; // YYYY-MM
+  /** Sum of the fee heads (before discount and fine) */
   amount: number;
+  /** Fee heads this voucher was made from */
+  items?: FeeItem[];
+  discount?: number;
+  fine?: number;
+  note?: string;
   status: PayStatus;
   paidOn?: string;
 }

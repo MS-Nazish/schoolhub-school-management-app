@@ -7,7 +7,7 @@ import { NoticeList } from '@/components/shared';
 import { DayPeriods, isSunday } from '@/components/Timetable';
 import { colors } from '@/components/theme';
 import { Banner, Button, Card, EmptyState, QuickActions, Screen, SectionTitle, StatCard, StatGrid, styles } from '@/components/ui';
-import { attendanceStats, noticesFor, unreadMessages, useStore } from '@/data/store';
+import { attendanceStats, netFee, noticesFor, unreadMessages, useStore } from '@/data/store';
 import { t } from '@/lib/i18n';
 import { dayOfWeek, money, today } from '@/lib/utils';
 
@@ -44,7 +44,7 @@ export default function ParentHome() {
         <Banner icon="information-circle" text={t('{name} is on leave today.', { name: first })} color={colors.warning} soft={colors.warningSoft} />
       )}
       {unpaid.length > 0 && (
-        <Banner icon="wallet" text={`${t('Fee due')}: ${money(unpaid.reduce((s, f) => s + f.amount, 0))}`}
+        <Banner icon="wallet" text={`${t('Fee due')}: ${money(unpaid.reduce((s, f) => s + netFee(f), 0))}`}
           color={colors.warning} soft={colors.warningSoft} onPress={() => router.push('/parent/fees')} />
       )}
       {unread > 0 && (
