@@ -17,7 +17,7 @@ const roleInfo = {
 };
 
 export default function Login() {
-  const { login, user, loaded, settings, setLanguage, cloud, checkEmptyDatabase, setupDemoSchool } = useStore();
+  const { login, user, loaded, settings, setLanguage, cloud, checkEmptyDatabase, setupDemoSchool, sendPasswordReset } = useStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -42,6 +42,18 @@ export default function Login() {
     if (err) return setError(emptyDb ? t('No accounts exist yet. Click "Set up demo school" first.') : err);
     // The redirect above takes over once the profile has loaded
     router.replace('/');
+  };
+
+  const forgotPassword = async () => {
+    setError('');
+    setSetupMsg('');
+    if (!cloud) return setError(t('Offline demo: ask the school admin to set a new password for you.'));
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError(t('Type your email above, then tap "Forgot password?" again.'));
+    setBusy(true);
+    const err = await sendPasswordReset(email);
+    setBusy(false);
+    if (err) return setError(err);
+    setSetupMsg(t('If an account exists for {email}, a reset link has been sent. Check your inbox and spam folder.', { email: email.trim() }));
   };
 
   const setupDemo = async () => {
@@ -92,6 +104,9 @@ export default function Login() {
               autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
             <Input label={t('Password')} value={password} onChangeText={setPassword} placeholder="••••••••"
               secureTextEntry onSubmitEditing={submit} />
+            <Pressable onPress={forgotPassword} disabled={busy} style={s.forgot} accessibilityRole="button">
+              <Text style={s.forgotText}>{t('Forgot password?')}</Text>
+            </Pressable>
 
             {!!error && <Text style={s.error}>{error}</Text>}
             <Button title={t('Sign In')} onPress={submit} icon="log-in-outline" loading={busy && !setupMsg} disabled={busy} />
@@ -134,6 +149,8 @@ const s = themedStyles(() => StyleSheet.create({
   card: { backgroundColor: colors.card, borderRadius: radius.xl, padding: space.xl },
   title: { fontSize: 22, fontWeight: '800', color: colors.text },
   subtitle: { color: colors.muted, marginBottom: space.lg, marginTop: 4 },
+  forgot: { alignSelf: 'flex-end', marginTop: -6, marginBottom: space.md, paddingVertical: 4 },
+  forgotText: { color: colors.accent, fontWeight: '700', fontSize: 13 },
   error: { color: colors.danger, marginBottom: space.md, fontWeight: '600' },
   setupBox: { marginBottom: space.lg, padding: space.md, borderRadius: radius.md, backgroundColor: colors.primarySoft, gap: 8 },
   setupTitle: { fontWeight: '800', color: colors.primary },

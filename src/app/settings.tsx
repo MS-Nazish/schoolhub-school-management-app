@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Platform, Switch, Text, View } from 'react-native';
 
+import { ChangePasswordCard } from '@/components/PasswordCards';
 import { colors } from '@/components/theme';
 import { Avatar, Badge, Button, Card, InfoRow, Screen, Segmented, SectionTitle, styles } from '@/components/ui';
 import { SCHOOL_NAME } from '@/data/seed';
@@ -47,6 +48,9 @@ export default function Settings() {
           </View>
         )}
       </Card>
+
+      <SectionTitle title={t('Password')} />
+      <ChangePasswordCard />
 
       <SectionTitle title={t('Appearance')} />
       <Card>

@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { dmyToIso, isoToDmy } from '@/components/DateInput';
+import { ResetPasswordCard } from '@/components/PasswordCards';
 import { StudentForm, type StudentFormValues, validateStudent } from '@/components/StudentForm';
 import { colors } from '@/components/theme';
-import { Avatar, Banner, Button, Card, EmptyState, Screen, styles } from '@/components/ui';
+import { Avatar, Banner, Button, Card, EmptyState, Screen, SectionTitle, styles } from '@/components/ui';
 import { className, useStore } from '@/data/store';
 import { t } from '@/lib/i18n';
 import { confirmAction, notify } from '@/lib/utils';
@@ -73,6 +74,13 @@ export default function EditStudent() {
       </Card>
 
       <Text style={[styles.muted, { textAlign: 'center', marginBottom: 12 }]}>{t('To change the photo, tap it on the student profile.')}</Text>
+
+      {parent && (
+        <>
+          <SectionTitle title={t('Parent login & password')} />
+          <ResetPasswordCard person={parent} />
+        </>
+      )}
 
       <Button variant="danger" icon="trash-outline" title={t('Delete student')} style={{ marginBottom: 8 }}
         onPress={() => confirmAction(t('Delete student'), `${t('Remove')} ${student.name}?`, () => {

@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Switch, Text, View } from 'react-native';
 
+import { ResetPasswordCard } from '@/components/PasswordCards';
 import { TeacherForm, type TeacherFormValues, validateTeacher } from '@/components/TeacherForm';
 import { colors } from '@/components/theme';
 import { Avatar, Badge, Button, Card, EmptyState, Screen, SectionTitle, styles } from '@/components/ui';
@@ -82,6 +83,9 @@ export default function EditTeacher() {
           </View>
         ))}
       </Card>
+
+      <SectionTitle title={t('Login & password')} />
+      <ResetPasswordCard person={teacher} />
 
       <Button variant="danger" icon="trash-outline" title={t('Delete teacher')} style={{ marginTop: 6, marginBottom: 8 }}
         onPress={() => confirmAction(t('Delete teacher'), `${t('Remove')} ${teacher.name}?`, () => {

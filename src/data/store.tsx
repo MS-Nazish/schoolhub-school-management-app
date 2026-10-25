@@ -7,7 +7,10 @@
  * - otherwise (offline demo mode), to AsyncStorage on this device.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import {
+  EmailAuthProvider, onAuthStateChanged, reauthenticateWithCredential, sendPasswordResetEmail, signInWithEmailAndPassword, signOut,
+  updatePassword,
+} from 'firebase/auth';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { I18nManager, Platform, useColorScheme } from 'react-native';
 
@@ -43,6 +46,12 @@ interface StoreValue {
   /** Resolves to an error message, or null on success */
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
+  /** Changes the signed-in user's password; resolves to an error message, or null on success */
+  changePassword: (current: string, next: string) => Promise<string | null>;
+  /** Firebase only: emails a password reset link; resolves to an error message, or null on success */
+  sendPasswordReset: (email: string) => Promise<string | null>;
+  /** Offline demo only: admin sets another user's password */
+  setUserPassword: (userId: string, password: string) => void;
   resetDemoData: () => void;
   /** Firebase only: whether the project has no data yet */
   checkEmptyDatabase: () => Promise<boolean>;
@@ -159,6 +168,9 @@ const authErrors: Record<string, string> = {
   'auth/invalid-email': 'Please enter a valid email address',
   'auth/too-many-requests': 'Too many attempts. Please wait a minute and try again.',
   'auth/network-request-failed': 'No internet connection',
+  'auth/weak-password': 'Password must be at least 6 characters',
+  'auth/requires-recent-login': 'Please log out, log in again and retry',
+  'auth/missing-email': 'Please enter a valid email address',
 };
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
@@ -315,6 +327,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (cloud) signOut(getAuthInstance()).catch(() => {});
         else setUserId(null);
       },
+      changePassword: async (current, next) => {
+        if (!user) return t('Could not sign in');
+        if (cloud) {
+          const auth = getAuthInstance();
+          if (!auth.currentUser) return t('Please log out, log in again and retry');
+          try {
+            await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(user.email, current));
+          } catch (e) {
+            const code = (e as { code?: string }).code ?? '';
+            return t(['auth/invalid-credential', 'auth/wrong-password'].includes(code) ? 'Current password is incorrect' : authErrors[code] ?? 'Could not change password');
+          }
+          try {
+            await updatePassword(auth.currentUser, next);
+            return null;
+          } catch (e) {
+            return t(authErrors[(e as { code?: string }).code ?? ''] ?? 'Could not change password');
+          }
+        }
+        if (user.password !== current) return t('Current password is incorrect');
+        update((d) => ({ ...d, users: d.users.map((u) => (u.id === user.id ? { ...u, password: next } : u)) }));
+        return null;
+      },
+      sendPasswordReset: async (email) => {
+        if (!cloud) return t('Offline demo: ask the school admin to set a new password for you.');
+        try {
+          await sendPasswordResetEmail(getAuthInstance(), email.trim());
+          return null;
+        } catch (e) {
+          const code = (e as { code?: string }).code ?? '';
+          // Don't reveal whether an account exists for this email
+          if (code === 'auth/user-not-found') return null;
+          return t(authErrors[code] ?? 'Could not send the reset email');
+        }
+      },
+      setUserPassword: (userId, password) =>
+        update((d) => ({ ...d, users: d.users.map((u) => (u.id === userId ? { ...u, password } : u)) })),
       resetDemoData: () => {
         const seed = createSeedData();
         update(() => seed);
